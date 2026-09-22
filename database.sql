@@ -1,5 +1,0 @@
-CREATE TABLE pelaaja (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nimi VARCHAR(50) NOT NULL,
-    pisteet INT DEFAULT 0
-);
