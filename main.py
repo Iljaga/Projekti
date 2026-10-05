@@ -11,128 +11,163 @@ yhteys = mysql.connector.connect(
     password='fortnite06',
     autocommit=True
 )
-
 kursori = yhteys.cursor()
 
-#kysymys kohdat
 helppo_kysymykset = [
     ("Mikä on Suomen pääkaupunki?", "helsinki"),
     ("Montako jalkaa kissalla on?", "4"),
-    ("mikä on maailman isoin maa?", "venäjä"),
-    ("viikon päivä jossa on eniten 'a'", "maanantai"),
-
+    ("Mikä on maailman isoin maa?", "venäjä"),
+    ("Viikon päivä jossa on eniten 'a'?", "maanantai"),
 ]
 vaikea_kysymykset = [
-    ("Mikä on Japanin pääkaupunki?", "tokyo"),
     ("Missä maassa on Eiffel-torni?", "ranska"),
+    ("Mikä on maailman pienin valtio pinta-alaltaan?", "vatikaani"),
+    ("Mikä alkuaine on kemialliselta merkiltään W?", "volframi"),
+    ("Kuka kirjoitti romaanin 1984?", "george orwell"),
+    ("Mikä planeetta pyörii akselinsa ympäri nopeimmin?", "jupiter"),
+    ("Kuinka monta luuta aikuisen ihmisen kehossa yleensä on?", "206"),
+    ("Mikä on maailman syvin tunnettu valtameren kohta?", "challenger deep"),
+    ("Minkä maan pääkaupunki on Ulaanbaatar?", "mongolia"),
+    ("Mikä elin tuottaa insuliinia?", "haima"),
+    ("Mikä on kemiallinen merkki kullalle?", "au"),
 ]
+
+
 def kysy_kysymys():
-    taso = input("Haluatko helpon vai vaikean kysymyksen? (helppo/vaikea): ").lower()
+    taso = input(
+        "Haluatko helpon vai vaikean kysymyksen? (helppo/vaikea): "
+    ).lower()
     if taso == "helppo":
-        if len(helppo_kysymykset) == 0:
-            print("Ei oo helppoja kysymyksiä vielä.")
-            return 0
         kysymys, oikea = random.choice(helppo_kysymykset)
     elif taso == "vaikea":
-        if len(vaikea_kysymykset) == 0:
-            print("Ei oo vaikeita kysymyksiä vielä.")
-            return 0
         kysymys, oikea = random.choice(vaikea_kysymykset)
     else:
-        print("Kirjota helppo tai vaikea.")
+        print("Kirjoita helppo tai vaikea.")
         return 0
     print("\nKysymys:", kysymys)
     vastaus = input("Vastauksesi: ")
     if vastaus.lower() == oikea.lower():
-        palkinto = random.randint(200, 400)
+        if taso == "helppo":
+            palkinto = random.randint(200, 400)
+        else:
+            palkinto = random.randint(400, 700)
         print("Oikein! Sait", palkinto, "catcoinia.")
         return palkinto
     else:
-        print("Väärin! Oikea vastaus oli:", oikea)
+        print("Väärin!")
+        print("Oikea vastaus oli:", oikea)
         return 0
+
+
 def hae_lahimmat_maat(nykyinen):
     sql = """
-    SELECT latitude_deg, longitude_deg
-    FROM airport
-    WHERE iso_country IN (
-        SELECT iso_country FROM country
-        WHERE LOWER(name) = LOWER(%s)
-    )
-    LIMIT 1
-    """
+          SELECT latitude_deg, longitude_deg
+          FROM airport
+          WHERE iso_country IN (SELECT iso_country \
+                                FROM country \
+                                WHERE LOWER(name) = LOWER(%s)) LIMIT 1 \
+          """
     kursori.execute(sql, (nykyinen,))
     koordinaatit = kursori.fetchone()
     if koordinaatit is None:
-        print("Maata ei löytynyt.")
+        print("Nykyistä maata ei löytynyt.")
         return []
     sql = """
-    SELECT country.name, airport.latitude_deg, airport.longitude_deg
-    FROM airport, country
-    WHERE airport.iso_country = country.iso_country
-    AND LOWER(country.name) != LOWER(%s)
-    GROUP BY country.name
-    """
+          SELECT country.name, airport.latitude_deg, airport.longitude_deg
+          FROM airport
+                   JOIN country
+                        ON airport.iso_country = country.iso_country
+          WHERE LOWER(country.name) != LOWER(%s) \
+          """
     kursori.execute(sql, (nykyinen,))
     tulokset = kursori.fetchall()
-
     etaisyydet = []
     for nimi, lat, lon in tulokset:
-        etaisyys = geodesic(koordinaatit, (lat, lon)).kilometers
+        etaisyys = geodesic(
+            koordinaatit,
+            (lat, lon)
+        ).kilometers
         etaisyydet.append((etaisyys, nimi))
-
     etaisyydet.sort()
-
     vaihtoehdot = []
+    kaytetyt_maat = set()
     for etaisyys, nimi in etaisyydet:
-        hinta = random.randint(200, 300)
+        if nimi in kaytetyt_maat:
+            continue
+        kaytetyt_maat.add(nimi)
+        hinta = int(etaisyys / 100) + 100
         vaihtoehdot.append((nimi, hinta))
         if len(vaihtoehdot) == 3:
             break
-
     return vaihtoehdot
 
+def matkusta(nykyinen, raha, valinta, vaihtoehdot, kaydyt_maat):
+    # Muutetaan käyttäjän numero kokonaisluvuksi
+    try:
+        numero = int(valinta)
+    except ValueError:
+        print("Kirjoita matkakohteen numero, esimerkiksi 1, 2 tai 3.")
+        return nykyinen, raha
 
-def matkusta(nykyinen, raha, valinta, vaihtoehdot):
-    for maa, hinta in vaihtoehdot:
-        if maa.lower() == valinta.lower():
-            if raha < hinta:
-                print("Ei oo tarpeeksi catcoinia tähän matkaan.")
-                return nykyinen, raha
+    if numero < 1 or numero > len(vaihtoehdot):
+        print("Tuolla numerolla ei ole matkakohdetta.")
+        return nykyinen, raha
 
-            # lentokone animaatio
-            print("\nLähdit lentoon...")
-            print("""
+    maa, hinta = vaihtoehdot[numero - 1]
+    if raha < hinta:
+        print("Ei oo tarpeeksi catcoinia tähän matkaan.")
+        return nykyinen, raha
+    print("\nLähdit lentoon...")
+    print("""
        __|__
 --@--@--(_)--@--@--
 """)
-            time.sleep(3)
-            print("""
-__|__
-\___/
- | |
- | |
-_|_|______________
-        /|\ 
-      */ | \*
-      / -+- \\
-  ---o--(_)--o---
-    /  0 " 0  \\
-  */     |     \*
-  /      |      \\
-*/       |       \*
-saavuit lentokentään
+
+    time.sleep(2)
+
+    print("""
+       __|__
+      \\___/
+        | |
+        | |
+       _|_|______________
+              /|\\
+            */ | \\*
+            /  -+-  \\
+         ---o--(_)--o---
+           /  0 " 0  \\
+         */     |     \\*
+        </      |      \\
+       */       |       \\*
+
+Saavuit lentokentälle!
 """)
-            time.sleep(3)
 
-            nykyinen = maa
-            raha -= hinta
-            print("Saavuit maahan:", nykyinen)
-            print("Matka maksoi", hinta, "catcoin.")
-            print("Rahaa jäljellä:", raha, "catcoin")
-            return nykyinen, raha
+    time.sleep(2)
+    nykyinen = maa
+    raha -= hinta
 
-    print("Ei tollasta vaihtoehtoa, kokeile uudestaan.")
+    if maa not in kaydyt_maat:
+        kaydyt_maat.append(maa)
+    print("Saavuit maahan:", nykyinen)
+    print("Matka maksoi", hinta, "catcoin.")
+    print("Rahaa jäljellä:", raha, "catcoin.")
+
     return nykyinen, raha
+
+# NÄYTÄ KÄYDYT MAAT
+
+def nayta_kaydyt_maat(kaydyt_maat):
+    print("\n=============================")
+    print("        KÄYDYT MAAT")
+    print("=============================")
+    for numero, maa in enumerate(kaydyt_maat, 1):
+        print(numero, ".", maa)
+    print("=============================")
+
+
+#peli looppi
+
 print("""
        z
        z
@@ -142,7 +177,9 @@ print("""
  (         )
   \\___/
 """)
-print("kissa on nukkumasssa...")
+
+print("kissa on nukkumassa...")
+
 time.sleep(2)
 
 print("""
@@ -152,7 +189,9 @@ print("""
  (          )
    \\___/
 """)
+
 print("Kissa heräsi...")
+
 time.sleep(2)
 
 print("""
@@ -162,38 +201,112 @@ print("""
  (           )
    \\___/
 """)
-print("kissa halua matkustaa thaimaahan!\n")
+
+print("Kissa haluaa matkustaa Thaimaahan!\n")
+
 time.sleep(1)
 
-print("Tervetuloa kissa letopeliin\nSulla on 0 catcoinia. tavoiteet on päästä Thaimaahan.\n"
-      "Jos tarvitset rahaa, kirjoita 'tarvin rahaa'")
-print("Kirjoita 'tauko' kun haluut lopettaa.\n")
-time.sleep(4)
+print(
+    "Tervetuloa kissa lentopeliin!\n"
+    "Sulla on 0 catcoinia.\n"
+    "Tavoite on päästä Thaimaahan.\n\n"
+    "Jos tarvitset rahaa, kirjoita 'tarvin rahaa'.\n"
+    "Jos haluat nähdä käydyt maat, kirjoita 'minun käydyt maat'.\n"
+    "Kirjoita 'tauko', jos haluat lopettaa.\n"
+)
 
-raha = 0
-nykyinen = "Egypt"
+time.sleep(3)
 
+#pelin muuttuja
+
+raha = 10000
+nykyinen = "laos"
+kaydyt_maat = []
+kaydyt_maat.append(nykyinen)
+
+# Päälooppi
 while True:
     vaihtoehdot = hae_lahimmat_maat(nykyinen)
-
-    print("\nOlet nyt:", nykyinen)
+    print("\n-----------------------------")
+    print("Olet nyt:", nykyinen)
     print("Rahaa jäljellä:", raha, "catcoin")
+    print("-----------------------------")
     print("Voit lentää näihin maihin:")
-    for maa, hinta in vaihtoehdot:
-        print("-", maa + "-" + str(hinta) + "catcoin")
+    for numero, (maa, hinta) in enumerate(vaihtoehdot, 1):
+        print(
+            numero,
+            ".",
+            maa,
+            "-",
+            hinta,
+            "catcoin"
+        )
+    print("\n1-3 = matkusta")
+    print("tarvin rahaa = kysy kysymys")
+    print("minun käydyt maat = näytä käydyt maat")
+    print("tauko = lopeta peli")
 
-    valinta = input("Mihin haluat mennä (tai tarvin rahaa / tauko): ")
-
-    if valinta.lower() == "tauko":
+    valinta = input("\nValintasi: ")
+    if valinta == "tauko":
         print("\nPeli päättyy.")
         print("Oot nyt maassa:", nykyinen)
-        print("Rahaa jäi:", raha, "catcoin")
-        break
+        print("Rahaa jäi:", raha, "catcoin.")
 
-    if valinta.lower() == "tarvin rahaa":
-        palkinto = kysy_kysymys()
-        raha += palkinto
-        print("Nyt sulla on", raha, "catcoinia.")
+        break
+    # Käydyt maat
+    if valinta == "minun käydyt maat":
+        nayta_kaydyt_maat(kaydyt_maat)
+
         continue
 
-    nykyinen, raha = matkusta(nykyinen, raha, valinta, vaihtoehdot)
+    # catcoin hankiminen
+    if valinta == "tarvin rahaa":
+        palkinto = kysy_kysymys()
+        raha += palkinto
+        print(
+            "Nyt sulla on",
+            raha,
+            "catcoinia."
+        )
+        continue
+
+    #matkustaa
+    nykyinen, raha = matkusta(
+        nykyinen,
+        raha,
+        valinta,
+        vaihtoehdot,
+        kaydyt_maat
+    )
+    #maali
+    if nykyinen.lower() == "thailand":
+        print("""
+
+        🎉🎉🎉 ONNEKSI OLKOON! 🎉🎉🎉
+
+        Kissa pääsi Thaimaahan! kissa voitti 2000 catcoin
+
+             /\\_/\\
+            ( ^.^ )
+            /     \\
+           (       )
+            \\_____/
+
+        Kissa voi nyt nauttia lomasta!
+
+        PELI LÄPI!
+        """)
+
+        print("Rahaa jäi:", raha, "catcoin.")
+
+        print("\nKäydyt maat:")
+        nayta_kaydyt_maat(kaydyt_maat)
+
+        break
+
+# =========================
+# SULJETAAN TIETOKANTA
+# =========================
+
+kursori.close()
+yhteys.close()
