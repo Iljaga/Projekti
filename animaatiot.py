@@ -13,7 +13,8 @@ def aloitus_animaatio():
   \\___/
 """)
 
-    print("Kissa on nukkumassa...")
+    print("kissa on nukkumassa...")
+
     time.sleep(1)
 
     print("""
@@ -25,6 +26,7 @@ def aloitus_animaatio():
 """)
 
     print("Kissa heräsi...")
+
     time.sleep(1)
 
     print("""
@@ -35,35 +37,34 @@ def aloitus_animaatio():
    \\___/
 """)
 
-    print("Kissa haluaa matkustaa Thaimaahan!\n")
+    print("Kissa haluaa matkustaa Thaimaahan!")
+
     time.sleep(1)
 
 
 def lento_animaatio():
-
-    print("\nLähdit lentoon...")
 
     print("""
        __|__
 --@--@--(_)--@--@--
 """)
 
-    time.sleep(2)
+    time.sleep(4)
 
     print("""
-__|__
-\\___/
- | |
- | |
-_|_|______________
-        /|\\
-      */ | \\*
-      / -+- \\
-  ---o--(_)--o---
-    /  0 " 0  \\
-  */     |     \\*
-  /      |      \\
-*/       |       \\*
+       __|__
+      \\___/
+        | |
+        | |
+       _|_|______________
+              /|\\
+            */ | \\*
+            /  -+-  \\
+         ---o--(_)--o---
+           /  0 " 0  \\
+         */     |     \\*
+        </      |      \\
+       */       |       \\*
 
 Saavuit lentokentälle!
 """)

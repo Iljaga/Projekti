@@ -1,44 +1,85 @@
 import time
 
+
 from database import yhdista_tietokantaan
-from pelaaja import hae_pelaaja, luo_pelaaja, tallenna_pelaaja, poista_pelaaja
+
+from pelaaja import (
+    hae_pelaaja,
+    luo_pelaaja,
+    tallenna_pelaaja,
+    poista_pelaaja
+)
+
 from kysymykset import kysy_kysymys
-from matkustus import hae_lahimmat_maat, matkusta
+
+from matkustus import (
+    hae_lahimmat_maat,
+    matkusta,
+    nayta_kaydyt_maat
+)
+
 from animaatiot import aloitus_animaatio
 
 
-# Yhdistetään tietokantaan
+# =========================
+# TIETOKANTA
+# =========================
+
 yhteys = yhdista_tietokantaan()
 kursori = yhteys.cursor()
 
 
-# Aloitusanimaatio
+# =========================
+# ALOITUSANIMAATIO
+# =========================
+
 aloitus_animaatio()
 
-print(
-    "Tervetuloa kissa lentopeliin!\n"
-    "Tavoite on päästä Thaimaahan.\n"
-    "Jos tarvitset rahaa, kirjoita 'tarvin rahaa'."
-)
+
+# =========================
+# TERVETULOA
+# =========================
 
 print(
-    "Kirjoita 'tauko' kun haluut lopettaa.\n"
+    "\nTervetuloa kissa lentopeliin!\n"
+    "Tavoite on päästä Thaimaahan.\n\n"
+    "Jos tarvitset rahaa, kirjoita 'tarvin rahaa'.\n"
+    "Jos haluat nähdä käydyt maat, kirjoita "
+    "'minun käydyt maat'.\n"
+    "Kirjoita 'tauko', jos haluat lopettaa.\n"
 )
 
 time.sleep(2)
 
 
-# Käyttäjänimi
-nimi = input("Anna käyttäjänimi: ").strip()
+# =========================
+# KÄYTTÄJÄNIMI
+# =========================
 
-tulos = hae_pelaaja(kursori, nimi)
+nimi = input(
+    "Anna käyttäjänimi: "
+).strip()
 
 
-# Jos käyttäjä löytyy
+# Katsotaan löytyykö pelaaja
+tulos = hae_pelaaja(
+    kursori,
+    nimi
+)
+
+
+# =========================
+# VANHA PELAAJA
+# =========================
+
 if tulos:
+
     nykyinen, raha = tulos
 
-    print("\nTervetuloa takaisin,", nimi)
+    print(
+        "\nTervetuloa takaisin,",
+        nimi
+    )
 
     haluatko_poistaa = input(
         "Haluatko aloittaa alusta? (kyllä/ei): "
@@ -46,18 +87,29 @@ if tulos:
 
     if haluatko_poistaa == "kyllä":
 
-        poista_pelaaja(kursori, nimi)
+        poista_pelaaja(
+            kursori,
+            nimi
+        )
 
         nykyinen, raha = luo_pelaaja(
             kursori,
             nimi
         )
 
-        print("Vanha tallennus poistettu.")
-        print("Aloitat pelin alusta!")
+        print(
+            "Vanha tallennus poistettu."
+        )
+
+        print(
+            "Aloitat pelin alusta!"
+        )
 
 
-# Jos käyttäjää ei löydy
+# =========================
+# UUSI PELAAJA
+# =========================
+
 else:
 
     nykyinen, raha = luo_pelaaja(
@@ -65,10 +117,36 @@ else:
         nimi
     )
 
-    print("\nUusi pelaaja luotu!")
+    print(
+        "\nUusi pelaaja luotu!"
+    )
+
+    print(
+        "Aloitat maasta:",
+        nykyinen
+    )
+
+    print(
+        "Sinulla on",
+        raha,
+        "catcoinia."
+    )
 
 
-# Peli alkaa
+# =========================
+# KÄYDYT MAAT
+# =========================
+
+# Pelaajan nykyinen maa on
+# ensimmäinen käyty maa.
+
+kaydyt_maat = [nykyinen]
+
+
+# =========================
+# PÄÄLOOPPI
+# =========================
+
 while True:
 
     vaihtoehdot = hae_lahimmat_maat(
@@ -76,7 +154,12 @@ while True:
         nykyinen
     )
 
-    print("\nOlet nyt:", nykyinen)
+    print("\n-----------------------------")
+
+    print(
+        "Olet nyt:",
+        nykyinen
+    )
 
     print(
         "Rahaa jäljellä:",
@@ -84,22 +167,54 @@ while True:
         "catcoin"
     )
 
-    print("Voit lentää näihin maihin:")
+    print("-----------------------------")
 
-    for maa, hinta in vaihtoehdot:
+    print(
+        "Voit lentää näihin maihin:"
+    )
+
+
+    # Tulostetaan kolme matkavaihtoehtoa
+
+    for numero, (maa, hinta) in enumerate(
+        vaihtoehdot,
+        1
+    ):
 
         print(
-            f"- {maa} - {hinta} catcoin"
+            numero,
+            ".",
+            maa,
+            "-",
+            hinta,
+            "catcoin"
         )
 
 
+    print("\n1-3 = matkusta")
+
+    print(
+        "tarvin rahaa = kysy kysymys"
+    )
+
+    print(
+        "minun käydyt maat = näytä käydyt maat"
+    )
+
+    print(
+        "tauko = lopeta peli"
+    )
+
+
     valinta = input(
-        "\nMihin haluat mennä "
-        "(tai tarvin rahaa / tauko): "
+        "\nValintasi: "
     ).strip()
 
 
-    # Pelaaja haluaa lopettaa
+    # =========================
+    # TAUKO
+    # =========================
+
     if valinta.lower() == "tauko":
 
         tallenna_pelaaja(
@@ -109,7 +224,13 @@ while True:
             raha
         )
 
-        print("\nPeli tallennettu ja päättyy.")
+        print(
+            "\nPeli tallennettu."
+        )
+
+        print(
+            "Peli päättyy."
+        )
 
         print(
             "Oot nyt maassa:",
@@ -119,13 +240,29 @@ while True:
         print(
             "Rahaa jäi:",
             raha,
-            "catcoin"
+            "catcoin."
         )
 
         break
 
 
-    # Pelaaja tarvitsee rahaa
+    # =========================
+    # KÄYDYT MAAT
+    # =========================
+
+    if valinta.lower() == "minun käydyt maat":
+
+        nayta_kaydyt_maat(
+            kaydyt_maat
+        )
+
+        continue
+
+
+    # =========================
+    # RAHAN HANKKIMINEN
+    # =========================
+
     if valinta.lower() == "tarvin rahaa":
 
         palkinto = kysy_kysymys()
@@ -148,15 +285,21 @@ while True:
         continue
 
 
-    # Matkustaminen
+    # =========================
+    # MATKUSTAMINEN
+    # =========================
+
     nykyinen, raha = matkusta(
         nykyinen,
         raha,
         valinta,
-        vaihtoehdot
+        vaihtoehdot,
+        kaydyt_maat
     )
 
+
     # Tallennetaan matkan jälkeen
+
     tallenna_pelaaja(
         kursori,
         nimi,
@@ -165,15 +308,58 @@ while True:
     )
 
 
-    # Tarkistetaan voitto
+    # =========================
+    # MAALI
+    # =========================
+
     if nykyinen.lower() == "thailand":
 
-        print("\n🐱 Kissa pääsi Thaimaahan!")
-        print("Voitit pelin!")
+        print("""
+
+        🎉🎉🎉 ONNEKSI OLKOON! 🎉🎉🎉
+
+        Kissa pääsi Thaimaahan!
+
+             /\\_/\\
+            ( ^.^ )
+            /     \\
+           (       )
+            \\_____/
+
+        Kissa voi nyt nauttia lomasta!
+
+        PELI LÄPI!
+        """)
+
+        print(
+            "Rahaa jäi:",
+            raha,
+            "catcoin."
+        )
+
+        print(
+            "\nKäydyt maat:"
+        )
+
+        nayta_kaydyt_maat(
+            kaydyt_maat
+        )
+
+        # Tallennetaan vielä lopullinen tila
+
+        tallenna_pelaaja(
+            kursori,
+            nimi,
+            nykyinen,
+            raha
+        )
 
         break
 
 
-# Suljetaan tietokanta
+# =========================
+# SULJETAAN TIETOKANTA
+# =========================
+
 kursori.close()
 yhteys.close()
